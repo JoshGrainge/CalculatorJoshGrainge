@@ -1,3 +1,11 @@
+/*
+Name: Josh Grainge
+Student Number: A00129117
+Description: Assigns calculator buttons to listener function. Updates calculator screen text based
+             on user input. Does calculations based on users input and outputs product to
+             calculators screen.
+ */
+
 package com.example.calculatorappjoshgrainge;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -8,11 +16,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity  implements View.OnClickListener{
 
@@ -24,6 +29,7 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Update initial text view
         UpdateScreenText();
 
         // Assign buttons onclick
@@ -54,6 +60,7 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
         // Equals
         Button equals = findViewById(R.id.equals);
 
+        // Assign button listeners
         zero.setOnClickListener(this);
         one.setOnClickListener(this);
         two.setOnClickListener(this);
@@ -83,6 +90,8 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
     @Override
     public void onClick(View v) {
 
+        /* This was originally a switch statement, but was giving errors so I switched to
+           this else if monstrosity */
         int id = v.getId();
         // Add math symbol
         if(id == R.id.plus){
@@ -128,6 +137,7 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
             AddToEquationString(numButton.getText().toString());
         }
 
+        // After button press update screens text
         UpdateScreenText();
     }
 
@@ -140,17 +150,20 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
         equationString += num;
     }
 
+    // Clear screen text strings
     void ClearScreenStrings() {
         oldEquationString = "";
         equationString = "0";
     }
 
-    void OutputResults(String outputText){
+    // Update string variables associated with "screen" text
+    void UpdateEquationStrings(String outputText){
         oldEquationString = equationString + " =";
         equationString = outputText;
         UpdateScreenText();
     }
 
+    // Update calculator "screen" text views
     void UpdateScreenText() {
         // Old equation screen
         TextView oldEquationTextView = findViewById(R.id.old_equation);
@@ -160,62 +173,26 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
         screenText.setText(String.valueOf(equationString));
     }
 
-    void SeparateParentheses() {
 
-        boolean writingParenetheses = false;
-        List<String> statements = new ArrayList<>();
-        int index = 0;
-        for (int i = 0; i < equationString.length(); i++){
+    void Compute(String equation) {
 
-            if(equationString.charAt(i) == '('){
-
-                if(writingParenetheses)
-                    index++;
-                else if(!writingParenetheses && index > 0)
-                    index = statements.size();
-
-                writingParenetheses = true;
-                statements.add("");
-            }
-            if(writingParenetheses)
-            {
-                String s = statements.get(index);
-                s += equationString.charAt(i);
-                statements.set(index, s);
-
-                if(equationString.charAt(i) == ')') {
-                    Log.d("Replace", statements.get(index));
-                    equationString = equationString.replace(statements.get(index), Compute(statements.get(index)));
-                    index--;
-                    if(index < 0){
-                        writingParenetheses = false;
-                        index = 0;
-                    }
-                }
-
-            }
-        }
-
-        Log.d("After parentheses:", equationString);
-
-        // This is to test parentheses strings
-        /*
-        String outputTest = "";
-        for (String s: matchList) {
-            outputTest += s + ", ";
-        }
-
-        Log.d("Strings: ", outputTest);
-         */
-
-        //List<String> newValues = new ArrayList<>();
-        //for (int i = matchList.size()-1; i >= 0; i--){
-        //    Compute(matchList.get(i));
-        //}
-    }
-
-    String Compute(String equation) {
         String[] strings = equationString.split("\\s+");
+
+        boolean validOneSymbolEquation = false;
+        // This is for when strings[1] doesn't exist
+        try {
+            validOneSymbolEquation = strings[1].equals("^2") || strings[1].equals("!") || strings[1].equals("|x|");
+        }catch (ArrayIndexOutOfBoundsException e){
+
+        }
+
+        // Throw error when equation doesn't have valid components
+        if(strings.length <= 2 && !validOneSymbolEquation) {
+                UpdateEquationStrings("Invalid equation");
+                return;
+        }
+
+
         double output = 0.0;
         switch(strings[1])
         {
@@ -241,7 +218,7 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
                     break;
                 }
                 catch (NumberFormatException e) {
-                    OutputResults("Factorial calculations must be done on a single integer value");
+                    UpdateEquationStrings("Factorial calculations must be done on a single integer value");
                 }
                 break;
             case "^2":
@@ -252,8 +229,12 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
                 break;
         }
 
-        OutputResults(String.valueOf(output));
-        return "";
+        // Make output integer or double
+        if(output % 1 == 0) {
+            UpdateEquationStrings(String.valueOf((int)output));
+        }
+        else
+            UpdateEquationStrings(String.valueOf(output));
     }
 
     int Factorial(double value){
@@ -265,130 +246,9 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
         return sum;
     }
 
-    boolean IsNumber(String s){
-
-//        try{
-//            Double.parseDouble(s);
-//            return true;
-//        }catch (NumberFormatException){
-//            return false;
-//        }
-
-        return false;
-    }
-
     boolean IsOperator(String s){
         Pattern p = Pattern.compile("[^0-9]");
         Matcher m = p.matcher(s);
         return m.find();
-    }
-
-    String infixToPostfix(String infix) {
-        /* To find out the precedence, we take the index of the
-           token in the ops string and divide by 2 (rounding down).
-           This will give us: 0, 0, 1, 1, 2 */
-        final String ops = "-+/*^";
-
-        StringBuilder sb = new StringBuilder();
-        Stack<Integer> s = new Stack<>();
-
-        for (String token : infix.split("\\s")) {
-            if (token.isEmpty())
-                continue;
-            char c = token.charAt(0);
-            int idx = ops.indexOf(c);
-
-            // check for operator
-            if (idx != -1) {
-                if (s.isEmpty())
-                    s.push(idx);
-
-                else {
-                    while (!s.isEmpty()) {
-                        int prec2 = s.peek() / 2;
-                        int prec1 = idx / 2;
-                        if (prec2 > prec1 || (prec2 == prec1 && c != '^'))
-                            sb.append(ops.charAt(s.pop())).append(' ');
-                        else break;
-                    }
-                    s.push(idx);
-                }
-            }
-            else if (c == '(') {
-                s.push(-2); // -2 stands for '('
-            }
-            else if (c == ')') {
-                // until '(' on stack, pop operators.
-                while (s.peek() != -2)
-                    sb.append(ops.charAt(s.pop())).append(' ');
-                s.pop();
-            }
-            else {
-                sb.append(token).append(' ');
-            }
-        }
-        while (!s.isEmpty())
-            sb.append(ops.charAt(s.pop())).append(' ');
-        return sb.toString();
-    }
-
-    String ComputeInfixEquation(String equation) {
-        String[] sArr = equation.split("\\s");
-
-        Stack<String> strings = new Stack<>();
-
-        for (int i = sArr.length-1; i >= 0; i--) {
-            strings.push(sArr[i]);
-        }
-
-        double output = 0.0;
-
-        while(!strings.isEmpty()){
-            double x = Double.parseDouble(strings.pop());
-            if(strings.isEmpty())
-                return String.valueOf(x);
-
-            double y = 0;
-            // Only update when the next value is a number (Not when its an exponent pretty much)
-            if(!IsOperator(strings.peek())) {
-                y = Double.parseDouble(strings.pop());
-            }
-
-            switch (strings.pop()) {
-                case "+":
-                    strings.add(String.valueOf(x + y));
-//                    output += x + Double.parseDouble(sArr[i-1]);
-                    break;
-                case "-":
-                    strings.add(String.valueOf(x - y));
-//                    output += x - Double.parseDouble(sArr[i-1]);
-                    break;
-                case "*":
-                    strings.add(String.valueOf(x * y));
-//                    strings.add(String.valueOf(x * Double.parseDouble(strings.pop())));
-//                    output += x * Double.parseDouble(sArr[i-1]);
-                    break;
-                case "/":
-                    strings.add(String.valueOf(x / y));
-//                    strings.add(String.valueOf(x / Double.parseDouble(strings.pop())));
-//                    output += x / Double.parseDouble(sArr[i-1]);
-                    break;
-                case "^":
-                    strings.add(String.valueOf(x*x));
-                    //output += x * x;
-                    break;
-            }
-
-            Log.d("Loop", strings.peek());
-
-        }
-
-        for (int i =0; i < sArr.length; i++) {
-
-
-
-        }
-
-        return "";
     }
 }

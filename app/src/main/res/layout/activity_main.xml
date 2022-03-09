@@ -7,6 +7,11 @@
     tools:context=".MainActivity">
 
 
+    <!-- Calculator layout with buttons for 0-9, decimal, minus, plus, multiply, divide, pow 2,
+         modulo, factorial, absolute, clear, and equals. That additionally has 2 text views for
+         the current equation and above that the previous equation-->
+
+    <!-- "Screen" text views -->
     <TextView
         android:id="@+id/old_equation"
         android:textSize="15dp"
@@ -28,6 +33,7 @@
         android:layout_marginTop="20dp"
         android:layout_marginHorizontal="20dp"/>
 
+    <!-- Clear button -->
     <Button
         android:id="@+id/clear"
         android:layout_width="wrap_content"
@@ -41,6 +47,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="1.0" />
 
+    <!-- 4x4 table of buttons -->
     <TableLayout
         android:id="@+id/table_layout"
         android:layout_width="match_parent"
